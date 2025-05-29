@@ -1,0 +1,49 @@
+# Tekton Task: mock-task (reusable for mock steps)
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: mock-task
+spec:
+  params:
+    - name: step-name
+      type: string
+  steps:
+    - name: wait
+      image: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      script: |
+        #!/bin/sh
+        echo "$(params.step-name)..."
+
+# Tekton Task: patch-rollout
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: patch-rollout
+spec:
+  steps:
+    - name: patch-rollout
+      image: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      script: |
+        #!/bin/sh
+
+        echo "Reading current image tag from Rollout..."
+        IMAGE=$(oc get rollout discounts -n travel-agency -o jsonpath="{.spec.template.spec.containers[0].image}")
+
+        echo "Current image: $IMAGE"
+
+        # Extract current tag
+        CURRENT_TAG=$(echo "$IMAGE" | awk -F: '{print $2}')
+        if [ "$CURRENT_TAG" = "v1" ]; then
+          NEW_TAG="v2"
+        else
+          NEW_TAG="v1"
+        fi
+
+        NEW_IMAGE="quay.io/llevy/demo_travels_discounts:$NEW_TAG"
+        echo "Patching rollout to use: $NEW_IMAGE"
+
+        oc patch rollout discounts -n travel-agency \
+          --type=json \
+          -p="[{'op': 'replace', 'path': '/spec/template/spec/containers/0/image', 'value': '$NEW_IMAGE'}]"

@@ -1,0 +1,1 @@
+ oc get virtualservice discounts -n travel-agency -o yaml | kubectl neat

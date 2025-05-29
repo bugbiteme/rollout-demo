@@ -1,0 +1,44 @@
+# Tekton Pipeline: demo-rollout-pipeline
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: demo-rollout-pipeline
+spec:
+  tasks:
+    - name: clone-repo
+      taskRef:
+        name: mock-task
+      params:
+        - name: step-name
+          value: "Cloning repo"
+
+    - name: build-code
+      runAfter: [clone-repo]
+      taskRef:
+        name: mock-task
+      params:
+        - name: step-name
+          value: "Building code"
+
+    - name: test-code
+      runAfter: [build-code]
+      taskRef:
+        name: mock-task
+      params:
+        - name: step-name
+          value: "Testing code"
+
+    - name: security-scan
+      runAfter: [build-code]
+      taskRef:
+        name: mock-task
+      params:
+        - name: step-name
+          value: "Running security scan"
+
+    - name: patch-rollout
+      runAfter: [security-scan,test-code]
+      taskRef:
+        name: patch-rollout
+ 

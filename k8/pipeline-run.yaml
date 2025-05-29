@@ -1,0 +1,11 @@
+# Tekton PipelineRun: run-rollout-patch
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
+  name: demo-rollout-patch
+spec:
+  pipelineRef:
+    name: demo-rollout-pipeline

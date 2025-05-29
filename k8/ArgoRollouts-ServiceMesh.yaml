@@ -1,0 +1,125 @@
+apiVersion: argoproj.io/v1alpha1
+kind: RolloutManager
+metadata:
+  name: cluster
+  namespace: openshift-gitops
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: discounts
+  namespace: travel-agency
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: discounts
+  strategy:
+    canary:
+      canaryService: canary
+      stableService: discounts
+      steps:
+        - setWeight: 20
+        - pause: {}
+        - setWeight: 40
+        - pause:
+            duration: 20
+        - setWeight: 60
+        - pause:
+            duration: 20
+        - setWeight: 80
+        - pause:
+            duration: 20
+      trafficRouting:
+        istio:
+          virtualServices:
+            - name: discounts
+              routes:
+                - primary
+  template:
+    metadata:
+      annotations:
+        proxy.istio.io/config: |
+          tracing:
+            zipkin:
+              address: zipkin.istio-system:9411
+            sampling: 10
+            custom_tags:
+              http.header.portal:
+                header:
+                  name: portal
+              http.header.device:
+                header:
+                  name: device
+              http.header.user:
+                header:
+                  name: user
+              http.header.travel:
+                header:
+                  name: travel
+        readiness.status.sidecar.istio.io/applicationPorts: ''
+      labels:
+        app: discounts
+        version: v1
+    spec:
+      containers:
+        - env:
+            - name: CURRENT_SERVICE
+              value: discounts
+            - name: CURRENT_VERSION
+              value: v1
+            - name: LISTEN_ADDRESS
+              value: ':8000'
+          image: 'quay.io/llevy/demo_travels_discounts:v1'
+          imagePullPolicy: IfNotPresent
+          name: discounts
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: canary
+  namespace: travel-agency
+  labels:
+    app: discounts
+spec:
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
+  selector:
+    app: discounts
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: discounts
+  namespace: travel-agency
+spec:
+  hosts:
+    - discounts
+  http:
+    - name: primary
+      route:
+        - destination:
+            host: discounts
+            port:
+              number: 8000
+          weight: 100
+        - destination:
+            host: canary
+            port:
+              number: 8000
+          weight: 0
+
