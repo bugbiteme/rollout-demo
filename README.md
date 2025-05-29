@@ -12,7 +12,7 @@ Which was a hands-on workshop at Red Hat Summit 2025. The workshop had a canary 
 - Install the Openshift Pipelines Operator
 
 - Install the `argo` plugin for kubernetes/oc
-  - [link it instructions](https://argo-rollouts.readthedocs.io/en/stable/installation/)
+  - [link to instructions](https://argo-rollouts.readthedocs.io/en/stable/installation/)
 
 - In the workshop, be sure to complete `module 1`, and `module 2` up to the section `Activity: Shape Traffic with OpenShift Service Mesh`
 
@@ -94,7 +94,7 @@ canary: 0%
 ```
 
 *Note*: This requires the `argo` plugin for kubernetes/oc
-[link it instructions](https://argo-rollouts.readthedocs.io/en/stable/installation/)
+[link to instructions](https://argo-rollouts.readthedocs.io/en/stable/installation/)
 
 - To initiate a canary rollout, create a pipelinerun:
 
